@@ -1,5 +1,5 @@
 ---
-title: "Postneonatal mortality and temperature, northern Sweden 1895--1950"
+title: "Postneonatal mortality and winter temperature, northern Sweden 1895--1950"
 author: "Göran Broström and Tommy Bengtsson"
 date: "`r Sys.time()`"
 output:
@@ -50,7 +50,7 @@ par(las = 1, cex.axis = 0.8, cex.lab = 0.8, cex = 0.8)
 ```{r readdata}
 births <- readRDS("Rdata/births4.rds")
 infdat <- readRDS("Rdata/infdat4.rds")
-if (FALSE){  ## Ingen avrundning i nuvarande regim.
+if (TRUE){  ## Ingen avrundning i nuvarande regim.
     infdat$margTemp <- round(infdat$margTemp)
     infdat$margTemp.1 <- round(infdat$margTemp.1)
     infdat$margTemp.2 <- round(infdat$margTemp.2)
@@ -296,7 +296,7 @@ for that purpose.  Resulting data frame is partly shown in Table \@ref(tab:readd
 ##infdat$weather <- infdat$extemp.1
 ##infdat$climate <- round(infdat$emeantemp)
 tbl(head(post[, c("enter", "exit", "event", "margTemp.1", "expTemp.1", "week", "year")]),
-    caption = "Data with communal covariates.", fs = 11)
+    caption = "Data with some communal covariates.", fs = 11)
 ```
 
 We will use the temperature variables *meantemp* and *emeantemp* under the names *marginTemp* 
@@ -455,7 +455,7 @@ fit.post <- coxreg(Surv(enter, exit, event) ~ expTemp.1 + margTemp.1 + expTemp.2
                    + expTemp.3 + margTemp.3 + expTemp.4 + margTemp.4 + sex + socst +
                          parity + I(year - 1920), data = winter)
 ##dr <- drop1(fit.post, test = "Chisq")
-ltx2(fit.post, caption = "Postneonatal mortality, winter.", label = "tab:allpostfull")
+ltx2(fit.post, caption = "Postneonatal mortality, winter. Full model.", label = "tab:allpostfull")
 ```
 
 The result of a backward elimination is shown in Table \@ref(tab:allpost).
@@ -465,12 +465,15 @@ The result of a backward elimination is shown in Table \@ref(tab:allpost).
 ##post$expTemp <- post$eexpTemp.1
 ##post$margTemp <- post$extemp.1
 winter <- post[!post$summer, ]
-fit.post <- coxreg(Surv(enter, exit, event) ~ socst * (expTemp.1 + margTemp.1 + margTemp.2)
-                   + sex + socst +
+fit.post4 <- coxreg(Surv(enter, exit, event) ~ margTemp.1 + margTemp.2
+                   + expTemp.3 + sex + 
                          parity + I(year - 1920), data = winter)
 ##dr <- drop1(fit.post, test = "Chisq")
-ltx2(fit.post, caption = "Postneonatal mortality, winter.", label = "tab:allpost")
+ltx2(fit.post, caption = "Postneonatal mortality, winter. Reduced model.", label = "tab:allpost")
 ```
+
+
+
 
 We try total temperature instead of splitting into pieces, see Table \@ref(tab:allpostTfull).
 
@@ -482,17 +485,31 @@ fit.post <- coxreg(Surv(enter, exit, event) ~ Temp.1 + Temp.2 + Temp.3 + Temp.4
                    + sex + socst +
                         parity + I(year - 1920), data = winter)
 ##dr <- drop1(fit.post, test = "Chisq")
-ltx2(fit.post, caption = "Postneonatal mortality, temperature, winter.", label = "tab:allpostTfull")
+ltx2(fit.post, caption = "Postneonatal mortality, temperature, winter. Full model.", label = "tab:allpostTfull")
 ```
 
+A backward selection gives Table \@ref(tab:allpostTfullred).
+
+```{r allpostTfullred, results = "asis", cache = TRUE}
+##post$expTemp <- post$eexpTemp.1
+##post$margTemp <- post$extemp.1
+winter <- post[!post$summer, ]
+fit.post <- coxreg(Surv(enter, exit, event) ~ Temp.1 + Temp.2 + Temp.4 
+                   + sex + socst +
+                        parity + I(year - 1920), data = winter)
+##dr <- drop1(fit.post, test = "Chisq")
+ltx2(fit.post, caption = "Postneonatal mortality, temperature, winter. Reduced model.", label = "tab:allpostTfullred")
+```
+
+There are no signs of interaction between temperature and social status in this regard.
 The interaction between social status and expTemp is shown in Figure \@ref(fig:plotwcs). All except the 
 upper white collar have almost the same (negative) slope, the upper class do not have much problem with normal 
 temperature variations.
 
-```{r plotwcs, fig.cap = "Socioeconomic status and expTemp, winter. Postneonatal mortality.", fig.height = 3}
+```{r plotwcs, fig.cap = "Socioeconomic status and Temp.4, winter. Postneonatal mortality.", fig.height = 3}
 source("R/socfig.R")
-fitw <- coxreg(Surv(enter, exit, event) ~ socst:expTemp + socst, data = winter)
-fitw0 <- coxreg(Surv(enter, exit, event) ~ socst + expTemp, data = winter)
+fitw <- coxreg(Surv(enter, exit, event) ~ socst:Temp.4 + socst, data = winter)
+fitw0 <- coxreg(Surv(enter, exit, event) ~ socst + Temp.4, data = winter)
 p <- anova(fitw, fitw0)[[4]][2]
 rang <- range(winter$expTemp)
 socfig(coef(fitw), main = "", pval = p, ran = rang, ymax = 8)
@@ -501,16 +518,17 @@ socfig(coef(fitw), main = "", pval = p, ran = rang, ymax = 8)
 The interaction between social status and margTemp is shown in Figure \@ref(fig:plotwws). Here the situation
 is different for the upper class: It follows essentially the same path (on a lower level) as the rest.
 
-```{r plotwws, fig.cap = "Socioeconomic status and margTemp, winter. Postneonatal mortality.", fig.height = 3}
+```{r plotwws, fig.cap = "Socioeconomic status and margTemp.2, winter. Postneonatal mortality.", fig.height = 3}
 source("R/socfig.R")
-fitww <- coxreg(Surv(enter, exit, event) ~ socst:margTemp + socst, data = winter)
-fitww0 <- coxreg(Surv(enter, exit, event) ~ socst + margTemp, data = winter)
+fitww <- coxreg(Surv(enter, exit, event) ~ socst:margTemp.2 + socst, data = winter)
+fitww0 <- coxreg(Surv(enter, exit, event) ~ socst + margTemp.2, data = winter)
 p <- anova(fitww, fitww0)[[4]][2]
 rang <- range(winter$margTemp)
 socfig(coef(fitww), main = "", pval = p, ran = rang, ymax = 8)
 ```
 
 
+<!--
 
 ## Summer
 
@@ -518,7 +536,7 @@ See Table \@ref(tab:allposts) for summer results. The normal temperature variati
 still has a strong importance, while temporary variations on the margin have a  
 slightly lower effect on the postneonatal mortality.
 
-```{r allposts, results = "asis", cache = TRUE}
+```{r allposts, results = "asis", cache = TRUE, eval = FALSE}
 summer <- post[post$summer, ]
 fit.posts <- coxreg(Surv(enter, exit, event) ~  expTemp.1 + expTemp.2 + expTemp.3 + expTemp.4 + margTemp.1 + margTemp.2 + 
                      margTemp.3 + margTemp.4 + sex + socst + 
@@ -530,7 +548,7 @@ ltx2(fit.posts, caption = "Postneonatal mortality, summer.", label = "tab:allpos
 With total lagged temperature we get the results in Table \@ref(tab:allpostsT).
 
 
-```{r allpostsT, results = "asis", cache = TRUE}
+```{r allpostsT, results = "asis", cache = TRUE, eval = FALSE}
 summer <- post[post$summer, ]
 fit.posts <- coxreg(Surv(enter, exit, event) ~ Temp.1 + Temp.2 + Temp.3 + Temp.4 +
                      sex + socst + 
@@ -544,10 +562,10 @@ The interaction between social status and expTemp is shown in Figure \@ref(fig:p
 The impression is that the upper class suffer more of higher expected temperature (that is, 
 the months July and August) than farmers and workers, with lower white collars and qualified workers somwhere in between.
 
-```{r plotscs, fig.cap = "Socioeconomic status and expTemp, summer. Postneonatal mortality.", cache = TRUE, fig.height = 3}
+```{r plotscs, fig.cap = "Socioeconomic status and expTemp, summer. Postneonatal mortality.", cache = TRUE, fig.height = 3, eval = FALSE}
 source("R/socfig.R")
-fits <- coxreg(Surv(enter, exit, event) ~ socst:expTemp + socst, data = summer)
-fits0 <- coxreg(Surv(enter, exit, event) ~ socst + expTemp, data = summer)
+fits <- coxreg(Surv(enter, exit, event) ~ socst:expTemp.1 + socst, data = summer)
+fits0 <- coxreg(Surv(enter, exit, event) ~ socst + expTemp.1, data = summer)
 p <- anova(fits, fits0)[[4]][2]
 rang <- range(summer$expTemp)
 socfig(coef(fits), main = "", pval = p, ran = rang, ymax = 8)
@@ -556,15 +574,16 @@ socfig(coef(fits), main = "", pval = p, ran = rang, ymax = 8)
 The interaction between social status and margTemp is shown in Figure \@ref(fig:plotsws). 
 The pattern on the margin very much resembles that of the expected variations. 
 
-```{r plotsws, fig.cap = "Socioeconomic status and margTemp, summer. Postneonatal mortality.", cache = TRUE, fig.height = 3}
+```{r plotsws, fig.cap = "Socioeconomic status and margTemp, summer. Postneonatal mortality.", cache = TRUE, fig.height = 3, eval = FALSE}
 source("R/socfig.R")
-fitsw <- coxreg(Surv(enter, exit, event) ~ socst:margTemp + socst, data = summer)
-fitsw0 <- coxreg(Surv(enter, exit, event) ~ socst + margTemp, data = summer)
+fitsw <- coxreg(Surv(enter, exit, event) ~ socst:margTemp.1 + socst, data = summer)
+fitsw0 <- coxreg(Surv(enter, exit, event) ~ socst + margTemp.1, data = summer)
 p <- anova(fitsw, fitsw0)[[4]][2]
 rang <- range(summer$margTemp)
 socfig(coef(fitsw), main = "", pval = p, ran = rang, ymax = 8 )
 ```
 
+-->
 
 # Conclusion
 
