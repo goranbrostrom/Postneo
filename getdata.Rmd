@@ -118,7 +118,7 @@ per$foddat <- as.Date(as.character(per$foddat), format = "%Y%m%d")
 ##per$socStatus <- factor(per$socStatus)
 per <- per[, c("id", "sex", "birthdate", "mid", "foddat", "parity", "illeg", "socst",
                "subreg", "hisclass", "urban", "enter", "exit", "event")]
-saveRDS(per, file = "data/births4.rds")
+saveRDS(per, file = "Rdata/births4.rds")
 ```
 
 # Temperature data
@@ -141,8 +141,8 @@ bjurtemp <- tempdat("bjur", temp_ivl)
 ##stentemp <- normal(temp_ivl)
 ## End change
 
-saveRDS(umetemp, file = "data/umetemp.rds")
-saveRDS(bjurtemp, file = "data/bjurtemp.rds")
+saveRDS(umetemp, file = "Rdata/umetemp.rds")
+saveRDS(bjurtemp, file = "Rdata/bjurtemp.rds")
 ##saveRDS(stentemp, file = "data/stentemp.rds")  ## Added 27 Jan2022
 ```
 
@@ -174,15 +174,15 @@ bskel <- make.communal(bskel, bjurtemp[, tempvars],
                        start = temp_start, period = 1/52, lag = lagg)
 
 ### Sten:
-bsten <- per[per$subreg == "sten", ]
-bsten <- make.communal(bsten, stentemp[, tempvars], 
-                       start = temp_start, period = 1/52, lag = lagg)
+##bsten <- per[per$subreg == "sten", ]
+##bsten <- make.communal(bsten, stentemp[, tempvars], 
+         ##              start = temp_start, period = 1/52, lag = lagg)
 
 
 bume$region <- "ume"
 bskel$region <- "ske"
-bsten$region <- "sten"
-infdat <- rbind(bume, bskel, bsten)
+##bsten$region <- "sten"
+infdat <- rbind(bume, bskel)
 infdat$birthmonth <- ceiling((infdat$birthdate - floor(infdat$birthdate)) * 12)
 infdat$period <- cut(infdat$birthdate, c(1895, 1914, 1935, 1951), dig.lab = 5)
 infdat <- infdat[order(infdat$id, infdat$enter), c("subreg", "id", "sex", "enter", "exit", "event", 
