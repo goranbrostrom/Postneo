@@ -50,6 +50,10 @@ par(las = 1, cex.axis = 0.8, cex.lab = 0.8, cex = 0.8)
 ```{r readdata}
 births <- readRDS("Rdata/births4.rds")
 infdat <- readRDS("Rdata/infdat4.rds")
+infdat$socst2 <- infdat$socst
+levels(infdat$socst) <- c("highWhiteC", "farmer", "other", "other", "other", "other")
+births$socst2 <- births$socst
+levels(births$socst) <- c("highWhiteC", "farmer", "other", "other", "other", "other")
 if (TRUE){  ## Ingen avrundning i nuvarande regim.
     infdat$margTemp <- round(infdat$margTemp)
     infdat$margTemp.1 <- round(infdat$margTemp.1)
@@ -315,7 +319,6 @@ half-year is the rest, weeks 1-13 and 40--52, 1 January to 31 March and 1 Octobe
 This is the division made in @karlsson, and we keep it for comparability reasons.
 
 ```{r prepare}
-source("R/ltx2.R")
 post$parity <- cut(post$parity, c(-2, 1.5, 4.5, 19), labels = c("1", "2-4", "5+"))
 ##infdat$period <- cut(infdat$birthdate, c(1895, 1914, 1935, 1951), dig.lab = 5)
 ##levels(infdat$subreg) <- c("ume", "ske")
@@ -338,11 +341,14 @@ primarily with *social status* (`socst`).
 *   **Temp.j, expTemp.j, margTemp.j** (j = 1, 2, 3, 4), time lagged variables (by week).
 *   **socst** Social status:
      + *highWhiteC* Upper white collar
+     <!--
      + *farmer*
      + *lowWhiteC* Lower white collar
      + *qualWorker* Qualified worker
      + *worker* Unqualified worker
      + *none* No notation (for instance unmarried mother)
+     -->
+     + *fitwwother*
 *   **sex** Boy or girl
 *   **urban** Small town (Umeå or Skellefteå) or not (logical)
 *   **parity** Birth order
@@ -469,7 +475,7 @@ fit.post4 <- coxreg(Surv(enter, exit, event) ~ margTemp.1 + margTemp.2
                    + expTemp.3 + sex + 
                          parity + I(year - 1920), data = winter)
 ##dr <- drop1(fit.post, test = "Chisq")
-ltx2(fit.post, caption = "Postneonatal mortality, winter. Reduced model.", label = "tab:allpost")
+ltx2(fit.post4, caption = "Postneonatal mortality, winter. Reduced model.", label = "tab:allpost")
 ```
 
 
@@ -481,24 +487,24 @@ We try total temperature instead of splitting into pieces, see Table \@ref(tab:a
 ##post$expTemp <- post$eexpTemp.1
 ##post$margTemp <- post$extemp.1
 winter <- post[!post$summer, ]
-fit.post <- coxreg(Surv(enter, exit, event) ~ Temp.1 + Temp.2 + Temp.3 + Temp.4 
-                   + sex + socst +
+fit.post <- coxreg(Surv(enter, exit, event) ~ (Temp.1 + Temp.2 + Temp.3 + Temp.4) * 
+                   socst + sex +
                         parity + I(year - 1920), data = winter)
-##dr <- drop1(fit.post, test = "Chisq")
+dr <- drop1(fit.post, test = "Chisq")
 ltx2(fit.post, caption = "Postneonatal mortality, temperature, winter. Full model.", label = "tab:allpostTfull")
 ```
 
 A backward selection gives Table \@ref(tab:allpostTfullred).
 
-```{r allpostTfullred, results = "asis", cache = TRUE}
+```{r allpostTfullred, results = "asis", cache = FALSE}
 ##post$expTemp <- post$eexpTemp.1
 ##post$margTemp <- post$extemp.1
 winter <- post[!post$summer, ]
-fit.post <- coxreg(Surv(enter, exit, event) ~ Temp.1 + Temp.2 + Temp.4 
-                   + sex + socst +
+fit.post <- coxreg(Surv(enter, exit, event) ~ (Temp.1 + Temp.2) * 
+                    socst + sex + 
                         parity + I(year - 1920), data = winter)
-##dr <- drop1(fit.post, test = "Chisq")
-ltx2(fit.post, caption = "Postneonatal mortality, temperature, winter. Reduced model.", label = "tab:allpostTfullred")
+dr <- drop1(fit.post, test = "Chisq")
+ltx2(fit.post, dr = dr, caption = "Postneonatal mortality, temperature, winter. Reduced model.", label = "tab:allpostTfullred")
 ```
 
 There are no signs of interaction between temperature and social status in this regard.
@@ -511,7 +517,7 @@ source("R/socfig.R")
 fitw <- coxreg(Surv(enter, exit, event) ~ socst:Temp.4 + socst, data = winter)
 fitw0 <- coxreg(Surv(enter, exit, event) ~ socst + Temp.4, data = winter)
 p <- anova(fitw, fitw0)[[4]][2]
-rang <- range(winter$expTemp)
+rang <- range(winter$Temp.4)
 socfig(coef(fitw), main = "", pval = p, ran = rang, ymax = 8)
 ```
 
@@ -523,7 +529,7 @@ source("R/socfig.R")
 fitww <- coxreg(Surv(enter, exit, event) ~ socst:margTemp.2 + socst, data = winter)
 fitww0 <- coxreg(Surv(enter, exit, event) ~ socst + margTemp.2, data = winter)
 p <- anova(fitww, fitww0)[[4]][2]
-rang <- range(winter$margTemp)
+rang <- range(winter$margTemp.2)
 socfig(coef(fitww), main = "", pval = p, ran = rang, ymax = 8)
 ```
 

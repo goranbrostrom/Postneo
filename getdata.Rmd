@@ -137,13 +137,13 @@ bjurtemp <- tempdat("bjur", temp_ivl)
 
 ##Changed 5 feb 2022:
 ##stentemp <- tempdat("sten", temp_ivl) # Added 27 Jan 2022
-source("R/normal.R") # normal = Norsjö - Malå!!
-stentemp <- normal(temp_ivl)
+##source("R/normal.R") # normal = Norsjö - Malå!!
+##stentemp <- normal(temp_ivl)
 ## End change
 
 saveRDS(umetemp, file = "data/umetemp.rds")
 saveRDS(bjurtemp, file = "data/bjurtemp.rds")
-saveRDS(stentemp, file = "data/stentemp.rds")  ## Added 27 Jan2022
+##saveRDS(stentemp, file = "data/stentemp.rds")  ## Added 27 Jan2022
 ```
 
 # Put on temperature data
