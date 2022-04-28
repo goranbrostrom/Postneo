@@ -1,0 +1,16 @@
+data
+data/*
+Backup
+tmp
+tmp/*
+Abstracts
+Abstracts/*
+*.tex
+*.out
+*.aux
+*.blg
+*.docx
+*~
+.Rproj.user
+.Rhistory
+*cache*
